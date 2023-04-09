@@ -221,8 +221,9 @@ vector<thread> threads;
 // }
 
 thread new_search(maze_info info){
-	// m.lock();
+	m.lock();
 	walk(info);
+	this_thread::sleep_for(chrono::milliseconds(500));
 	vector<pos_t> valid_positions;
 	valid_positions = get_valid_position(info);
 	if(!valid_positions.empty()){
@@ -236,7 +237,7 @@ thread new_search(maze_info info){
 		}
 
 	}
-	// m.unlock();
+	m.unlock();
 }
 
 int main(int argc, char* argv[])
@@ -252,9 +253,15 @@ int main(int argc, char* argv[])
 		print_maze();
 		vector<pos_t> valid_positions;
 		valid_positions = get_valid_position(info);
-		while(!valid_positions.empty()){
-			info.current_position = valid_positions.back();
-			valid_positions.pop_back();
+		while(!valid_positions.empty() or !position_buffer.empty()){
+			if(valid_positions.empty()){
+				info.current_position = position_buffer.top();
+				position_buffer.pop();
+			} else {
+
+				info.current_position = valid_positions.back();
+				valid_positions.pop_back();
+			}
 			if(valid_positions.size()>0){
 				for (int i = 0; i < valid_positions.size(); i++){
 					maze_info current_info(info);
@@ -262,7 +269,7 @@ int main(int argc, char* argv[])
 					valid_positions.pop_back();
 					thread t(new_search, ref(current_info));
 					threads.push_back(move(t));
-					this_thread::sleep_for(chrono::milliseconds(50));
+					this_thread::sleep_for(chrono::milliseconds(500));
 				}
 			}
 			if(position_buffer.size()>0){
@@ -278,7 +285,7 @@ int main(int argc, char* argv[])
 			walk(info);
 			print_maze();
 			valid_positions = get_valid_position(info);				
-			this_thread::sleep_for(chrono::milliseconds(50));
+			this_thread::sleep_for(chrono::milliseconds(500));
 		}
 		
 		for(auto& thread : threads){
